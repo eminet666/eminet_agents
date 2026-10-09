@@ -30,7 +30,6 @@ class TravelpayoutsAPI:
             "currency": kwargs.get("currency", "EUR"),
             "limit": kwargs.get("limit", 20),
             "token": self.token,
-            "direct": kwargs.get("direct", False)  # <-- AJOUT ICI : Filtre les vols directs
         }
 
         response = self.session.get(
@@ -54,6 +53,20 @@ class FlightSearcher:
     def __init__(self):
         self.api = TravelpayoutsAPI()
         self.agent = LLMAgent()
+        # Durée max pour un vol direct (en minutes)
+        self.direct_flight_durations = {
+            ("CDG", "BCN"): 150,   # 2h30
+            ("ORY", "BCN"): 150,
+            ("CDG", "HER"): 210,   # 3h30
+            ("ORY", "HER"): 210,
+            ("CDG", "ATH"): 180,   # 3h00
+            ("ORY", "ATH"): 180,
+        }
+
+    def _is_direct_flight(self, origin, destination, duration_to):
+        """Vérifie si le vol est direct en comparant la durée à la durée max attendue"""
+        max_duration = self.direct_flight_durations.get((origin, destination), 300)  # 5h par défaut
+        return duration_to <= max_duration
 
     def search(self, origin, destination, date, return_date=None, **kwargs):
         api_response = self.api.search_flights(origin, destination, date, return_date, **kwargs)
@@ -64,6 +77,7 @@ class FlightSearcher:
 
         flights = []
         data = api_response["data"]
+        direct_only = kwargs.get("direct", False)
 
         for dest, flights_data in data.items():
             for flight_id, flight_info in flights_data.items():
@@ -71,7 +85,7 @@ class FlightSearcher:
                 departure_at = flight_info.get("departure_at", "")
                 departure_time = departure_at.split("T")[1][:5] if "T" in departure_at else ""
 
-                # Calcul de l'heure d'arrivée à partir de la durée (duration_to en minutes)
+                # Calcul de l'heure d'arrivée
                 duration_minutes = flight_info.get("duration_to", 0)
                 if departure_time:
                     departure_hour = int(departure_time[:2])
@@ -82,6 +96,10 @@ class FlightSearcher:
                     arrival_time = f"{arrival_hour:02d}:{arrival_min:02d}"
                 else:
                     arrival_time = ""
+
+                # Filtrer les vols directs si demandé
+                if direct_only and not self._is_direct_flight(origin, destination, duration_minutes):
+                    continue
 
                 flight = {
                     "compagnie": flight_info.get("airline", ""),
@@ -137,9 +155,9 @@ class FlightSearcher:
             return_date=return_date,
             adults=c.get("adultes", 1),
             currency=c.get("devise", "EUR"),
-            direct=c.get("escales_max", 1) == 0  # <-- Filtre les vols directs si escales_max=0
+            direct=c.get("escales_max", 1) == 0
         )
 
-    def get_cheapest_flights(self, origin, destination, date, return_date=None, limit=5, direct=True):  # <-- direct=True par défaut
+    def get_cheapest_flights(self, origin, destination, date, return_date=None, limit=5, direct=True):
         flights = self.search(origin, destination, date, return_date, limit=limit*2, direct=direct)
         return sorted(flights, key=lambda x: x["prix"])[:limit]
