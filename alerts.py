@@ -6,7 +6,7 @@ class EmailAlert:
     def __init__(self):
         self.api_key = os.getenv("MAILJET_API_KEY")
         self.api_secret = os.getenv("MAILJET_API_SECRET")
-        self.from_email = os.getenv("MAILJET_FROM_EMAIL", "ton_email@domaine.com")
+        self.from_email = os.getenv("MAILJET_FROM_EMAIL", "eminet_travel@yahoo.fr")
         if not self.api_key or not self.api_secret:
             raise ValueError("MAILJET_API_KEY ou MAILJET_API_SECRET manquant")
 

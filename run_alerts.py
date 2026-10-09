@@ -16,7 +16,7 @@ def main():
     config = load_config()
     searcher = FlightSearcher()
     db = FlightDatabase()
-    email_alert = EmailAlert()  # <-- CORRIGÉ ICI
+    email_alert = EmailAlert() 
 
     all_results = []
     for search in config["searches"]:
