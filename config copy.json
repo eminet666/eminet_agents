@@ -2,6 +2,13 @@
     "searches": [
         {
             "origin": "ORY",
+            "destination": "ATH",
+            "date": "2026-10-19",
+            "return_date": "2026-10-26",
+            "direct": true
+        },
+        {
+            "origin": "ORY",
             "destination": "HER",
             "date": "2026-10-19",
             "direct": true
