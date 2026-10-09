@@ -15,8 +15,6 @@
         }
     ],
     "email": {
-        "to": "etienne.minet@ensaama.net",
-        "smtp_server": "smtp.gmail.com",
-        "smtp_port": 587
+        "to": "eminet666@gmail.com"
     }
 }
