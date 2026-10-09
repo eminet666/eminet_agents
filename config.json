@@ -4,9 +4,8 @@
             "origin": "CDG",
             "destination": "HER",
             "date": "2026-10-19",
-            "return_date": "2026-10-26", // Aller-retour (optionnel)
-            "direct": true // Vol direct seulement
-            // "max_price": 200 // Optionnel : alerte si ≤ 200€
+            "return_date": "2026-10-26",
+            "direct": true
         },
         {
             "origin": "ORY",
