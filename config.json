@@ -11,7 +11,7 @@
             "origin": "ORY",
             "destination": "HER",
             "date": "2026-10-19",
-            "direct": true // Accepte les escales
+            "direct": true
         }
     ],
     "email": {
