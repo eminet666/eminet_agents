@@ -5,6 +5,9 @@
         },
         {
             "path": "../../TELECHARGEMENTS/price-flights"
+        },
+        {
+            "path": "../../TELECHARGEMENTS/price-flights/price-flights/agents"
         }
     ],
     "settings": {}
