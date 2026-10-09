@@ -30,6 +30,7 @@ class TravelpayoutsAPI:
             "currency": kwargs.get("currency", "EUR"),
             "limit": kwargs.get("limit", 20),
             "token": self.token,
+            "direct": kwargs.get("direct", False)  # <-- AJOUT ICI : Filtre les vols directs
         }
 
         response = self.session.get(
@@ -84,7 +85,7 @@ class FlightSearcher:
 
                 flight = {
                     "compagnie": flight_info.get("airline", ""),
-                    "prix": float(flight_info.get("price", 0)),  # Prix EXACT (pas divisé)
+                    "prix": float(flight_info.get("price", 0)),
                     "devise": api_response.get("currency", "EUR"),
                     "escales": 0,
                     "heure_depart": departure_time,
@@ -136,9 +137,9 @@ class FlightSearcher:
             return_date=return_date,
             adults=c.get("adultes", 1),
             currency=c.get("devise", "EUR"),
-            direct=c.get("escales_max", 1) == 0
+            direct=c.get("escales_max", 1) == 0  # <-- Filtre les vols directs si escales_max=0
         )
 
-    def get_cheapest_flights(self, origin, destination, date, return_date=None, limit=5, direct=False):
+    def get_cheapest_flights(self, origin, destination, date, return_date=None, limit=5, direct=True):  # <-- direct=True par défaut
         flights = self.search(origin, destination, date, return_date, limit=limit*2, direct=direct)
         return sorted(flights, key=lambda x: x["prix"])[:limit]
