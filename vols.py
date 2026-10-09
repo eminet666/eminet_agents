@@ -66,31 +66,36 @@ class FlightSearcher:
 
         for dest, flights_data in data.items():
             for flight_id, flight_info in flights_data.items():
-                departure_time = flight_info.get("departure_at", "")
-                if "T" in departure_time:
-                    departure_time = departure_time.split("T")[1][:5]  # HH:MM
+                # Heure de départ (HH:MM)
+                departure_at = flight_info.get("departure_at", "")
+                departure_time = departure_at.split("T")[1][:5] if "T" in departure_at else ""
 
-                arrival_time = flight_info.get("return_at", "")
-                if "T" in arrival_time:
-                    arrival_time = arrival_time.split("T")[1][:5]  # HH:MM
+                # Calcul de l'heure d'arrivée à partir de la durée (duration_to en minutes)
+                duration_minutes = flight_info.get("duration_to", 0)
+                if departure_time:
+                    departure_hour = int(departure_time[:2])
+                    departure_min = int(departure_time[3:5])
+                    total_minutes = departure_hour * 60 + departure_min + duration_minutes
+                    arrival_hour = (total_minutes // 60) % 24
+                    arrival_min = total_minutes % 60
+                    arrival_time = f"{arrival_hour:02d}:{arrival_min:02d}"
+                else:
+                    arrival_time = ""
 
                 flight = {
                     "compagnie": flight_info.get("airline", ""),
-                    "prix": float(flight_info.get("price", 0)),
+                    "prix": float(flight_info.get("price", 0)),  # Prix EXACT (pas divisé)
                     "devise": api_response.get("currency", "EUR"),
                     "escales": 0,
                     "heure_depart": departure_time,
                     "heure_arrivee": arrival_time,
-                    "duree": f"{flight_info.get('duration_to', 0)} min",
+                    "duree": f"{duration_minutes} min",
                     "date": date,
                     "origin": origin,
                     "destination": dest,
                     "numero_vol": flight_info.get("flight_number", "")
                 }
                 flights.append(flight)
-
-        if kwargs.get("direct", False):
-            pass
 
         return flights
 
