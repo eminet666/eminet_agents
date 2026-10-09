@@ -1,0 +1,13 @@
+{
+    "searches": [
+        {
+            "origin": "ORY",
+            "destination": "HER",
+            "date": "2026-10-19",
+            "direct": true
+        }
+    ],
+    "email": {
+        "to": "etienne.minet@ensaama.net"
+    }
+}

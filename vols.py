@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import os, requests
+import os
+import requests
 from datetime import datetime, timedelta
 from agents.llm_agent import LLMAgent
 
@@ -15,7 +16,6 @@ class TravelpayoutsAPI:
         self.session = requests.Session()
 
     def search_flights(self, origin, destination, depart_date, return_date=None, **kwargs):
-        # Convertir les dates au format YYYY-MM-DD si ce sont des objets date
         if isinstance(depart_date, datetime):
             depart_date = depart_date.strftime("%Y-%m-%d")
         if return_date and isinstance(return_date, datetime):
@@ -32,15 +32,12 @@ class TravelpayoutsAPI:
             "token": self.token,
         }
 
-        # Travelpayouts n'a PAS de paramètre 'direct' dans /prices/cheap
-        # On filtrera les résultats après
         response = self.session.get(
             f"{self.BASE_URL}/prices/cheap",
             params=params,
             timeout=30
         )
 
-        # DEBUG: Afficher l'URL et la réponse
         print(f"\n🔍 DEBUG API Travelpayouts:")
         print(f"URL: {response.url}")
         print(f"Status: {response.status_code}")
@@ -64,19 +61,26 @@ class FlightSearcher:
             print("⚠️ Aucune donnée")
             return []
 
-        # 🟢 PARSING DIRECT (sans LLM)
         flights = []
         data = api_response["data"]
 
         for dest, flights_data in data.items():
             for flight_id, flight_info in flights_data.items():
+                departure_time = flight_info.get("departure_at", "")
+                if "T" in departure_time:
+                    departure_time = departure_time.split("T")[1][:5]  # HH:MM
+
+                arrival_time = flight_info.get("return_at", "")
+                if "T" in arrival_time:
+                    arrival_time = arrival_time.split("T")[1][:5]  # HH:MM
+
                 flight = {
                     "compagnie": flight_info.get("airline", ""),
                     "prix": float(flight_info.get("price", 0)),
                     "devise": api_response.get("currency", "EUR"),
-                    "escales": 0,  # Travelpayouts ne donne pas cette info
-                    "heure_depart": flight_info.get("departure_at", "").split("T")[0],
-                    "heure_arrivee": flight_info.get("return_at", "").split("T")[0] if return_date else "",
+                    "escales": 0,
+                    "heure_depart": departure_time,
+                    "heure_arrivee": arrival_time,
                     "duree": f"{flight_info.get('duration_to', 0)} min",
                     "date": date,
                     "origin": origin,
@@ -85,16 +89,14 @@ class FlightSearcher:
                 }
                 flights.append(flight)
 
-        # Filtrer les vols directs si demandé
         if kwargs.get("direct", False):
-            # Travelpayouts ne donne pas escales, on suppose direct
             pass
 
         return flights
 
     def search_natural(self, query):
         criteria = self.agent.interpret_query(query)
-        print(f"🔍 Critères interprétés: {criteria}")  # DEBUG
+        print(f"🔍 Critères interprétés: {criteria}")
 
         if criteria.get("type") != "vol":
             print("⚠️ Requête non reconnue comme un vol")
@@ -108,7 +110,6 @@ class FlightSearcher:
             print("⚠️ Origin ou destination manquant")
             return []
 
-        # Gérer les dates spéciales
         date = c.get("date")
         if date and isinstance(date, str):
             if date.lower() == "aujourd'hui":
@@ -130,9 +131,9 @@ class FlightSearcher:
             return_date=return_date,
             adults=c.get("adultes", 1),
             currency=c.get("devise", "EUR"),
-            direct=c.get("escales_max", 1) == 0  # True si escales_max=0
+            direct=c.get("escales_max", 1) == 0
         )
 
     def get_cheapest_flights(self, origin, destination, date, return_date=None, limit=5, direct=False):
         flights = self.search(origin, destination, date, return_date, limit=limit*2, direct=direct)
-        return sorted(flights, key=lambda x: x["prix"])[:limit]  # Trie et limite        
+        return sorted(flights, key=lambda x: x["prix"])[:limit]

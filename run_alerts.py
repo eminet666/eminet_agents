@@ -10,7 +10,10 @@ def load_config():
         return json.load(f)
 
 def format_flight(flight):
-    return f"{flight['origin']}→{flight['destination']} [{flight['compagnie']} {flight['numero_vol']}] {flight['heure_depart']} {flight['prix']}{flight['devise']}"
+    heures = flight['heure_depart']
+    if flight.get('heure_arrivee'):  # Si heure d'arrivée existe (aller-retour)
+        heures += f"-{flight['heure_arrivee']}"
+    return f"{flight['origin']}→{flight['destination']} [{flight['compagnie']} {flight['numero_vol']}] {heures} {flight['prix']}{flight['devise']}"
 
 def main():
     config = load_config()
