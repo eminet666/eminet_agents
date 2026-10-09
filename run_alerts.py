@@ -10,7 +10,7 @@ def load_config():
         return json.load(f)
 
 def format_flight(flight):
-    return f"{flight['origin']}→{flight['destination']} [{flight['compagnie']}] {flight['heure_depart']} {flight['prix']}{flight['devise']}"
+    return f"{flight['origin']}→{flight['destination']} [{flight['compagnie']} {flight['numero_vol']}] {flight['heure_depart']} {flight['prix']}{flight['devise']}"
 
 def main():
     config = load_config()
