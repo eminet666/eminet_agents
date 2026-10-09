@@ -13,23 +13,16 @@ def format_flight(flight):
     return f"{flight['origin']}→{flight['destination']} [{flight['compagnie']}] {flight['heure_depart']} {flight['prix']}{flight['devise']}"
 
 def main():
-    # Charger la config
     config = load_config()
     searcher = FlightSearcher()
     db = FlightDatabase()
-    email_alert = EmailAlert(
-        smtp_server=config["email"]["smtp_server"],
-        smtp_port=config["email"]["smtp_port"],
-        email=os.getenv("SMTP_EMAIL"),
-        password=os.getenv("SMTP_PASSWORD")
-    )
+    email_alert = EmailAlert()  # <-- CORRIGÉ ICI
 
-    # Exécuter les recherches
     all_results = []
     for search in config["searches"]:
         date = search["date"]
-        return_date = search.get("return_date")  # None si aller simple
-        direct = search.get("direct", False)      # False par défaut
+        return_date = search.get("return_date")
+        direct = search.get("direct", False)
 
         flights = searcher.search(
             origin=search["origin"],
@@ -44,7 +37,6 @@ def main():
             db.save_flight(flight)
             all_results.append(format_flight(flight))
 
-    # Envoyer les résultats par email
     if all_results:
         subject = f"📊 Résultats vols - {datetime.now().strftime('%Y-%m-%d')}"
         body = "Voici les résultats des recherches :\n\n" + "\n".join(all_results)
