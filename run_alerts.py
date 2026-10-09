@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from vols import FlightSearcher
-from alerts import AlertManager, EmailAlert
+from alerts import EmailAlert
 from database import FlightDatabase
 
 def load_config():
@@ -28,12 +28,18 @@ def main():
     all_results = []
     for search in config["searches"]:
         date = search["date"]
+        return_date = search.get("return_date")  # None si aller simple
+        direct = search.get("direct", False)      # False par défaut
+
         flights = searcher.search(
             origin=search["origin"],
             destination=search["destination"],
             date=date,
-            limit=3
+            return_date=return_date,
+            limit=3,
+            direct=direct
         )
+
         for flight in flights:
             db.save_flight(flight)
             all_results.append(format_flight(flight))
@@ -41,7 +47,7 @@ def main():
     # Envoyer les résultats par email
     if all_results:
         subject = f"📊 Résultats vols - {datetime.now().strftime('%Y-%m-%d')}"
-        body = "\n".join(all_results)
+        body = "Voici les résultats des recherches :\n\n" + "\n".join(all_results)
         email_alert.send(subject, body, config["email"]["to"])
         print("✅ Email envoyé avec les résultats")
     else:
