@@ -1,38 +1,41 @@
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+import base64
 
 class EmailAlert:
-    def __init__(self, smtp_server="smtp.gmail.com", smtp_port=587,
-                 email=None, password=None):
-        self.smtp_server = smtp_server
-        self.smtp_port = smtp_port
-        self.email = email or os.getenv("SMTP_EMAIL")
-        self.password = password or os.getenv("SMTP_PASSWORD")
+    def __init__(self):
+        self.api_key = os.getenv("MAILJET_API_KEY")
+        self.api_secret = os.getenv("MAILJET_API_SECRET")
+        self.from_email = os.getenv("MAILJET_FROM_EMAIL", "ton_email@domaine.com")
+        if not self.api_key or not self.api_secret:
+            raise ValueError("MAILJET_API_KEY ou MAILJET_API_SECRET manquant")
 
     def send(self, subject, body, to_email):
-        msg = MIMEMultipart()
-        msg["From"] = self.email
-        msg["To"] = to_email
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
+        auth = (self.api_key, self.api_secret)
+        url = "https://api.mailjet.com/v3.1/send"
+
+        payload = {
+            "Messages": [{
+                "From": {"Email": self.from_email, "Name": "Flight Alerts"},
+                "To": [{"Email": to_email}],
+                "Subject": subject,
+                "TextPart": body
+            }]
+        }
 
         try:
-            # Connexion avec gestion des erreurs
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()  # Sécurité obligatoire pour Gmail
-            server.login(self.email, self.password)
-            server.send_message(msg)
-            server.quit()
-            print(f"✅ Email envoyé à {to_email}")
-            return True
-        except smtplib.SMTPAuthenticationError:
-            print("❌ Erreur: Authentification échouée (vérifie ton App Password)")
-            return False
-        except smtplib.SMTPServerDisconnected:
-            print("❌ Erreur: Connexion fermée par le serveur (Gmail bloque peut-être l'IP)")
-            return False
+            response = requests.post(
+                url,
+                auth=auth,
+                json=payload,
+                timeout=10
+            )
+            if response.status_code == 200:
+                print(f"✅ Email envoyé à {to_email}")
+                return True
+            else:
+                print(f"❌ Erreur Mailjet: {response.status_code} - {response.text}")
+                return False
         except Exception as e:
-            print(f"❌ Erreur inattendue: {e}")
+            print(f"❌ Erreur: {e}")
             return False
